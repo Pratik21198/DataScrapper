@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30114.105
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataScrapper", "DataScrapper\DataScrapper.csproj", "{1DF572A0-0ADA-4D6A-B50E-E19046484BA1}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1DF572A0-0ADA-4D6A-B50E-E19046484BA1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1DF572A0-0ADA-4D6A-B50E-E19046484BA1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1DF572A0-0ADA-4D6A-B50E-E19046484BA1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1DF572A0-0ADA-4D6A-B50E-E19046484BA1}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {1F8C9B82-F103-4AB3-8075-E12145874E0F}
+	EndGlobalSection
+EndGlobal
