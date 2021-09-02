@@ -5,6 +5,7 @@ using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
 
 namespace DataScrapper
@@ -12,17 +13,37 @@ namespace DataScrapper
   class Program
   {
     private static string sqlConnectionString = ConfigurationManager.AppSettings["SqlConnectionString"];
+    static int pageNo = 1;
     static void Main(string[] args)
     {
       try
       {
-        string Category = "Home & Kitchen > Home Decor > Decorative Stickers";
-        int pageNo = 139; //Increment or reset if required
-        string ListUrlBase = string.Format("https://meesho.com/decorative-stickers/pl/o3o7f{0}",
-                                            pageNo > 1 ? string.Format("?page={0}", pageNo) : "");
-        Console.WriteLine(string.Format("Importing category: {0}", Category));
-        Console.WriteLine("");
-        ImportData(Category, ListUrlBase, pageNo);
+        DataTable dtCategories = GetCategories();
+        int cat = 0;
+        while (cat < dtCategories.Rows.Count)
+        {
+          try
+          {
+            string Category = Convert.ToString(dtCategories.Rows[cat]["Category"]);
+            string ListUrlBase = string.Format("{0}{1}",
+                                                Convert.ToString(dtCategories.Rows[cat]["CategoryUrl"]),
+                                                pageNo > 1 ? string.Format("?page={0}", pageNo) : "");
+            Console.WriteLine(string.Format("Importing category: {0}", Category));
+            Console.WriteLine("");
+            ImportData(Category, ListUrlBase, pageNo);
+
+            //move to next category
+            pageNo = 1;
+            cat++;
+          }
+          catch (Exception ex)
+          {
+            Console.WriteLine("Retrying..");
+            Console.WriteLine("");
+            RemovePageData(Convert.ToString(dtCategories.Rows[cat]["Category"]));
+          }
+        }
+
       }
       catch (Exception ex)
       {
@@ -76,10 +97,7 @@ namespace DataScrapper
         throw ex;
       }
     }
-
-    static void ImportProduct(HtmlNode product,
-                                    string Category,
-                                    int pageNo)
+    static void ImportProduct(HtmlNode product, string Category, int pageNo)
     {
       try
       {
@@ -98,6 +116,11 @@ namespace DataScrapper
         string removeBaseImageURL = imageUrl.Replace("https://images.meesho.com/images/products/", "");
 
         string sku = string.Format("S-{0}", removeBaseImageURL.Substring(0, removeBaseImageURL.IndexOf('/')));
+
+        using(WebClient imageClient = new WebClient())
+        {
+          imageClient.DownloadFile(imageUrl, string.Format(@"E:\_Storefuse\IMG\Products\{0}.jpg", sku));
+        }
 
         string productName = productPage.DocumentNode
                                         .SelectSingleNode("//h1[@class='pdp-title']")
@@ -128,7 +151,7 @@ namespace DataScrapper
                                    .SelectSingleNode("//div[@class='sold-by']")
                                    .InnerText;
 
-        string sqlQuery = @"INSERT INTO[dbo].[MeeshoProducts]
+        string sqlQuery = @"INSERT INTO [dbo].[MeeshoProducts]
                                  (
                                     [SKU]
                                    ,[Category]
@@ -178,6 +201,48 @@ namespace DataScrapper
       catch (Exception ex)
       {
         throw ex;
+      }
+    }
+    static DataTable GetCategories()
+    {
+      DataTable dtCategories = new DataTable();
+      try
+      {
+        using (SqlConnection cnn = new SqlConnection(sqlConnectionString))
+        {
+          using (SqlDataAdapter da = new SqlDataAdapter("SELECT * FROM Categories WHERE IsActive = 1", cnn))
+          {
+            cnn.Open();
+            da.Fill(dtCategories);
+            cnn.Close();
+          }
+        }
+        if (dtCategories == null || dtCategories.Rows.Count == 0)
+        { throw new Exception("No eligible categories found..!"); }
+      }
+      catch (Exception ex)
+      { throw ex; }
+      return dtCategories;
+    }
+    static void RemovePageData(string category)
+    {
+      try
+      {
+        using (SqlConnection cnn = new SqlConnection(sqlConnectionString))
+        {
+          using (SqlCommand cmd = new SqlCommand(string.Format("DELETE MeeshoProducts WHERE Category = '{0}' AND Page = {1}", category, pageNo), 
+                                                cnn))
+          {
+            cnn.Open();
+            cmd.ExecuteNonQuery();
+            cnn.Close();
+          }
+        }
+      }
+      catch (Exception ex)
+      {
+        Console.WriteLine(ex.Message);
+        Console.ReadKey();
       }
     }
   }
